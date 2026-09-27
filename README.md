@@ -106,7 +106,3 @@ Full discussion: [`ARTICLE.md`](ARTICLE.md#what-the-ai-could-not-do--and-why-tha
 
 See [`power-bi/README.md`](power-bi/README.md) for full setup instructions, and
 [`data/README.md`](data/README.md) for the sample dataset and schema reference.
-
-## License
-
-MIT — see [`LICENSE`](LICENSE).
