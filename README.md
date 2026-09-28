@@ -106,8 +106,3 @@ Full reasoning for each: [`docs/02-data-quality-findings.md`](docs/02-data-quali
   whether it actually looked right for the intended audience.
 
 Full discussion: [`ARTICLE.md`](ARTICLE.md#what-the-ai-could-not-do--and-why-that-matters-more-than-what-it-could).
-
-## Getting started
-
-See [`power-bi/README.md`](power-bi/README.md) for full setup instructions, and
-[`data/README.md`](data/README.md) for the sample dataset and schema reference.
