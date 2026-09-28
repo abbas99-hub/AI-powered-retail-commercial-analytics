@@ -2,7 +2,8 @@
 
 **An enterprise-grade Power BI solution built end-to-end with Claude, connected live to Power BI Desktop via MCP (Model Context Protocol) — from raw data profiling to a validated 8-page executive dashboard.**
 
-[![Power BI]([https://img.shields.io/badge/Power%20BI-F2C811?style=flat&logo=powerbi&logoColor=black](https://github.com/abbas99-hub/AI-powered-retail-commercial-analytics/blob/main/docs/Documentation/Executive%20Overview.png)](.)
+[![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=flat&logo=powerbi&logoColor=black)](https://github.com/abbas99-hub/AI-powered-retail-commercial-analytics/blob/main/docs/Documentation/Executive%20Overview.png)
+
 [![DAX](https://img.shields.io/badge/DAX-76%20Measures-blue)](docs/03-dax-measure-library.md)
 
 📄 **Read the full technical write-up:** [`Article.md`](Article.md) — *"Can AI Replace a Commercial Analyst?"*
