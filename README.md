@@ -50,12 +50,17 @@ Most "AI built my dashboard" projects show the output. This one shows the **audi
 │   ├── 04-architecture.md             <- star schema, relationships, why each decision was made
 │   └── 05-implementation-phases.md    <- the 20-phase gated build process
 ├── data/
-│   ├── README.md                      <- schema reference + sample-data notes
-│   └── sample/                        <- illustrative sample CSVs (real dataset not included)
-└── power-bi/
-    ├── README.md                      <- how to rebuild and install this project
-    ├── theme/                         <- custom Power BI theme (JSON)
-    └── report-definition/             <- the report canvas, as portable PBIR JSON
+│   ├── dim_campaigns.csv                      <- dimension table- campaigns
+│   ├── dim_customers.csv                      <- dimension table- customers
+│   ├── dim_dates.csv                          <- dimension table- calendar table
+│   ├── dim_products.csv                           <- dimension table- products
+│   ├── dim_salespersons.csv                      <- dimension table- salespersons
+│   ├── dim_stores.csv                      <- dimension table- Stores
+│   ├── fact_sales_normalized.rar                      <- fact table- sales
+└── Project/
+    ├── Retail Stores Analysis.Report                     <- the report canvas, custom Power BI theme JSON
+    ├── Retail Stores Analysis.SemanticModel                         <- data modeling, DAX queries
+    └── Retail Stores Analysis.pbip             <- Power BI file (.PBIP )
 ```
 
 ## The dashboard
