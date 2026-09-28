@@ -5,7 +5,7 @@
 [![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=flat&logo=powerbi&logoColor=black)](.)
 [![DAX](https://img.shields.io/badge/DAX-76%20Measures-blue)](docs/03-dax-measure-library.md)
 
-📄 **Read the full technical write-up:** [`ARTICLE.md`](ARTICLE.md) — *"Can AI Replace a Commercial Analyst?"*
+📄 **Read the full technical write-up:** [`Article.md`](Article.md) — *"Can AI Replace a Commercial Analyst?"*
 
 ---
 
