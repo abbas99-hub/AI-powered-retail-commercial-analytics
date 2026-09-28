@@ -1,5 +1,9 @@
 # AI-Native Retail Commercial Analytics
 
+<img width="736" height="416" alt="images (6)" src="https://github.com/user-attachments/assets/45642e1b-eed7-4e04-8cac-2c712ea05fbf" />
+
+
+
 **An enterprise-grade Power BI solution built end-to-end with Claude, connected live to Power BI Desktop via MCP (Model Context Protocol) — from raw data profiling to a validated 8-page executive dashboard.**
 
 [![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=flat&logo=powerbi&logoColor=black)](https://github.com/abbas99-hub/AI-powered-retail-commercial-analytics/blob/main/docs/Documentation/Executive%20Overview.png)
