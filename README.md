@@ -1,4 +1,4 @@
-# AI-Native Retail Commercial Analytics Platform
+# AI-Native Retail Commercial Analytics
 
 **An enterprise-grade Power BI solution built end-to-end with Claude, connected live to Power BI Desktop via MCP (Model Context Protocol) — from raw data profiling to a validated 8-page executive dashboard.**
 
