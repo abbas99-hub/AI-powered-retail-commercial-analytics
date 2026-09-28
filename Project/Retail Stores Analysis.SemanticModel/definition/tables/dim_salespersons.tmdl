@@ -1,0 +1,50 @@
+table dim_salespersons
+	lineageTag: a4773022-478b-4d18-a2e0-a7dac63e0154
+
+	column salesperson_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: a9473505-62b2-4182-9779-0dc2889d7c4d
+		summarizeBy: none
+		sourceColumn: salesperson_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column salesperson_id
+		dataType: string
+		lineageTag: 61494657-d6a8-48ce-a193-79f7a7d6a3d4
+		summarizeBy: none
+		sourceColumn: salesperson_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column salesperson_name
+		dataType: string
+		lineageTag: fb87fd35-3fd6-46a7-ab07-9c4ace448ab4
+		summarizeBy: none
+		sourceColumn: salesperson_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column salesperson_role
+		dataType: string
+		lineageTag: ea76e3ea-b35d-4d0c-bf81-66f081d5edab
+		summarizeBy: none
+		sourceColumn: salesperson_role
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_salespersons = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Hp\OneDrive\Documents\Power BI Projects\Retail Stores Analysis\data\dim_salespersons.csv"),[Delimiter=",", Columns=4, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"salesperson_sk", Int64.Type}, {"salesperson_id", type text}, {"salesperson_name", type text}, {"salesperson_role", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

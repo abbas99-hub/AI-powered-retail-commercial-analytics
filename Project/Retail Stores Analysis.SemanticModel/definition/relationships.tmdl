@@ -1,0 +1,39 @@
+relationship AutoDetected_c89402cc-875b-41f9-ac98-f65dd6219fba
+	fromColumn: fact_sales_normalized.campaign_sk
+	toColumn: dim_campaigns.campaign_sk
+
+relationship AutoDetected_e7cfab1c-e299-4cd1-9442-e945669d29f3
+	fromColumn: fact_sales_normalized.customer_sk
+	toColumn: dim_customers.customer_sk
+
+relationship AutoDetected_037c77b5-6be4-4977-b733-a6e1ab3275e8
+	fromColumn: fact_sales_normalized.product_sk
+	toColumn: dim_products.product_sk
+
+relationship AutoDetected_b45cd174-ccf5-435f-af2f-5b8f8d147e04
+	fromColumn: fact_sales_normalized.salesperson_sk
+	toColumn: dim_salespersons.salesperson_sk
+
+relationship AutoDetected_5e99882c-643f-425d-8b13-8bdec70a2ee1
+	fromColumn: fact_sales_normalized.store_sk
+	toColumn: dim_stores.store_sk
+
+relationship fact_sales_normalized_sales_date_only_dim_dates_full_date
+	fromColumn: fact_sales_normalized.sales_date_only
+	toColumn: dim_dates.full_date
+
+relationship dim_stores_store_manager_sk_dim_salespersons_salesperson_sk
+	isActive: false
+	fromColumn: dim_stores.store_manager_sk
+	toColumn: dim_salespersons.salesperson_sk
+
+relationship dim_campaigns_start_date_sk_dim_dates_date_sk
+	isActive: false
+	fromColumn: dim_campaigns.start_date_sk
+	toColumn: dim_dates.date_sk
+
+relationship dim_campaigns_end_date_sk_dim_dates_date_sk
+	isActive: false
+	fromColumn: dim_campaigns.end_date_sk
+	toColumn: dim_dates.date_sk
+

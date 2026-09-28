@@ -1,0 +1,74 @@
+table dim_customers
+	lineageTag: b93b59b0-bf15-4526-a30c-e3a802eebb21
+
+	column customer_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: 467e8d04-4b1b-41f7-a5ed-1ae3716c1aa5
+		summarizeBy: none
+		sourceColumn: customer_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: string
+		lineageTag: 2284e05b-9d21-4f7a-855f-2febd53bb849
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column first_name
+		dataType: string
+		lineageTag: 310f673c-8062-4466-b0fa-3ca15783c168
+		summarizeBy: none
+		sourceColumn: first_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column last_name
+		dataType: string
+		lineageTag: ea35b7c2-a6ee-4d02-8a87-17290890c353
+		summarizeBy: none
+		sourceColumn: last_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column email
+		dataType: string
+		lineageTag: df7e1210-0be9-4357-a880-e85a16f8e12b
+		summarizeBy: none
+		sourceColumn: email
+
+		annotation SummarizationSetBy = Automatic
+
+	column residential_location
+		dataType: string
+		lineageTag: a6b443a9-a604-44cc-a650-ca65914469ee
+		summarizeBy: none
+		sourceColumn: residential_location
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_segment
+		dataType: string
+		lineageTag: acda2fbe-7887-44f2-a5e5-22edafa568d0
+		summarizeBy: none
+		sourceColumn: customer_segment
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_customers = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Hp\OneDrive\Documents\Power BI Projects\Retail Stores Analysis\data\dim_customers.csv"),[Delimiter=",", Columns=7, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"customer_sk", Int64.Type}, {"customer_id", type text}, {"first_name", type text}, {"last_name", type text}, {"email", type text}, {"residential_location", type text}, {"customer_segment", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

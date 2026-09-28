@@ -1,0 +1,5 @@
+expression DataFolderPath = "C:\Users\Hp\OneDrive\Documents\Power BI Projects\Retail Stores Analysis\data\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 1b5c98a6-8770-42d1-9d2a-5e034d4570df
+
+	annotation PBI_ResultType = Text
+

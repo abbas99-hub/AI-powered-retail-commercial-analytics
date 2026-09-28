@@ -1,0 +1,562 @@
+table _Measures
+	lineageTag: e8122675-ad3f-4721-bf71-51bde39dd62f
+
+	/// Sum of all transaction values
+	measure 'Total Sales' = SUM(fact_sales_normalized[total_amount])
+		formatString: "AED" #,##0
+		displayFolder: 01 Sales
+		lineageTag: 26b8a4fe-7125-4a4f-869d-ff51305cf45d
+
+	/// Row count of the fact table at transaction grain
+	measure 'Total Transactions' = COUNTROWS(fact_sales_normalized)
+		formatString: #,##0
+		displayFolder: 01 Sales
+		lineageTag: 9f7303ab-33e0-4d53-86ee-6af0af7c54ea
+
+	/// Distinct count of sales_id; data-quality safeguard — should equal Total Transactions at current 1:1 grain
+	measure 'Distinct Transactions' = DISTINCTCOUNT(fact_sales_normalized[sales_id])
+		formatString: #,##0
+		displayFolder: 01 Sales
+		lineageTag: 6f089e56-840f-4977-b866-cd8aa8008d97
+
+	/// Average value per transaction
+	measure 'Average Transaction Value' = DIVIDE([Total Sales], [Total Transactions])
+		formatString: "AED" #,##0.00
+		displayFolder: 01 Sales
+		lineageTag: 54cf1bed-740d-4152-9c27-3db946d5aa48
+
+	/// Total sales divided by distinct customers present in filter context
+	measure 'Average Sales Per Customer' = DIVIDE([Total Sales], DISTINCTCOUNT(fact_sales_normalized[customer_sk]))
+		formatString: "AED" #,##0.00
+		displayFolder: 01 Sales
+		lineageTag: c60b9851-34ae-4828-abbe-3b1fe81ea4aa
+
+	/// Total sales divided by distinct stores present in filter context
+	measure 'Average Sales Per Store' = DIVIDE([Total Sales], DISTINCTCOUNT(fact_sales_normalized[store_sk]))
+		formatString: "AED" #,##0.00
+		displayFolder: 01 Sales
+		lineageTag: 41380bda-67be-4cee-9e30-c3d7f187b256
+
+	/// Total sales divided by distinct products present in filter context
+	measure 'Average Sales Per Product' = DIVIDE([Total Sales], DISTINCTCOUNT(fact_sales_normalized[product_sk]))
+		formatString: "AED" #,##0.00
+		displayFolder: 01 Sales
+		lineageTag: 33fbdd65-9e08-437a-8bfd-08059660cccc
+
+	/// Row count of dim_customers — all registered customers regardless of purchase activity
+	measure 'Total Customers' = COUNTROWS(dim_customers)
+		formatString: #,##0
+		displayFolder: 02 Customers
+		lineageTag: 52af4757-d16f-4fe2-895e-887026bb7322
+
+	/// Distinct customers transacting within the CURRENT filter context (e.g. respects a date slicer)
+	measure 'Active Customers' = DISTINCTCOUNT(fact_sales_normalized[customer_sk])
+		formatString: #,##0
+		displayFolder: 02 Customers
+		lineageTag: 0b717a6d-f61a-47cd-8c54-53dfd9d706a9
+
+	/// Distinct customers with at least one purchase EVER (ignores date filter, still respects other filters like segment/store)
+	measure 'Customers With Purchases' = CALCULATE(DISTINCTCOUNT(fact_sales_normalized[customer_sk]), ALL(dim_dates))
+		formatString: #,##0
+		displayFolder: 02 Customers
+		lineageTag: c83ee9f9-7c4b-4af1-869a-7c46f11ebac3
+
+	/// Registered customers who have never made a purchase
+	measure 'Customers Without Purchases' = [Total Customers] - [Customers With Purchases]
+		formatString: #,##0
+		displayFolder: 02 Customers
+		lineageTag: c4ad6c54-754c-4478-bba1-9119f857cd67
+
+	/// Proxy metric: customers whose FIRST-EVER transaction date falls within the current period filter. No account-signup date exists in the data, so this uses first purchase as the acquisition proxy — stated explicitly, not invented as a true signup date.
+	measure 'New Customers' =
+			VAR PeriodStart = MIN(dim_dates[full_date])
+			VAR PeriodEnd = MAX(dim_dates[full_date])
+			RETURN
+			CALCULATE(
+			    DISTINCTCOUNT(fact_sales_normalized[customer_sk]),
+			    FILTER(
+			        VALUES(fact_sales_normalized[customer_sk]),
+			        CALCULATE(MIN(fact_sales_normalized[sales_date_only]), ALL(dim_dates)) >= PeriodStart &&
+			        CALCULATE(MIN(fact_sales_normalized[sales_date_only]), ALL(dim_dates)) <= PeriodEnd
+			    )
+			)
+		formatString: #,##0
+		displayFolder: 02 Customers
+		lineageTag: a8b13e55-5ea6-411a-abab-4135f493c173
+
+	/// Distinct customers with more than one transaction within the current filter context
+	measure 'Repeat Customers' =
+			CALCULATE(
+			    DISTINCTCOUNT(fact_sales_normalized[customer_sk]),
+			    FILTER(
+			        VALUES(fact_sales_normalized[customer_sk]),
+			        CALCULATE(COUNTROWS(fact_sales_normalized)) > 1
+			    )
+			)
+		formatString: #,##0
+		displayFolder: 02 Customers
+		lineageTag: 16e527ce-9af5-4bbc-9722-2f23c0081381
+
+	/// Share of purchasing customers who bought more than once in context
+	measure 'Repeat Purchase Rate' = DIVIDE([Repeat Customers], [Customers With Purchases])
+		formatString: 0.0%
+		displayFolder: 02 Customers
+		lineageTag: 12e95470-e9b6-42ae-ae9b-d9d0dd9795ed
+
+	/// Total sales attributable to customers in the 'High Value' segment (existing segment label in dim_customers)
+	measure 'High Value Customer Sales' = CALCULATE([Total Sales], dim_customers[customer_segment] = "High Value")
+		formatString: "AED" #,##0
+		displayFolder: 02 Customers
+		lineageTag: fc87977c-d791-4d5b-9000-9e9eb7ef4ef6
+
+	/// Total sales attributable to customers in the 'Churn Risk' segment (existing segment label in dim_customers)
+	measure 'Churn Risk Customer Sales' = CALCULATE([Total Sales], dim_customers[customer_segment] = "Churn Risk")
+		formatString: "AED" #,##0
+		displayFolder: 02 Customers
+		lineageTag: e77f745a-42ee-4c6b-934c-cd5d58538fa3
+
+	/// Row count of dim_products — full catalog regardless of sales activity
+	measure 'Total Products' = COUNTROWS(dim_products)
+		formatString: #,##0
+		displayFolder: 03 Products
+		lineageTag: c08b434d-be9f-4a0c-b14b-d0c2b49075c5
+
+	/// Distinct products with at least one sale EVER (ignores date filter, respects other filters)
+	measure 'Products Sold' = CALCULATE(DISTINCTCOUNT(fact_sales_normalized[product_sk]), ALL(dim_dates))
+		formatString: #,##0
+		displayFolder: 03 Products
+		lineageTag: 5cdb412e-c7e7-4a75-b925-601d69ea272f
+
+	/// Catalog products with zero sales in the entire dataset
+	measure 'Products Never Sold' = [Total Products] - [Products Sold]
+		formatString: #,##0
+		displayFolder: 03 Products
+		lineageTag: 0877e1d9-5081-4190-aa4a-f64a9bf0b2d1
+
+	/// Dense rank of the current product by Total Sales, highest = 1. Evaluated over ALL products regardless of visual-level filters, so a filtered table still shows true catalog-wide rank.
+	measure 'Product Rank' = RANKX(ALL(dim_products), [Total Sales], , DESC, Dense)
+		formatString: #,##0
+		displayFolder: 03 Products
+		lineageTag: 2863cc6e-7aa2-4975-8b0f-e6b5530aec41
+
+	/// Name of the single highest-selling product in the current context
+	measure 'Top Product' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_products[product_name]),
+			    TOPN(1, ALL(dim_products), [Total Sales], DESC)
+			)
+		displayFolder: 03 Products
+		lineageTag: c678a044-f4d1-4663-9c3d-153f33e2fc3a
+
+	/// Name of the lowest-selling product in the current context, EXCLUDING never-sold products (a product with zero sales is a different condition — see Products Never Sold — not a 'worst seller')
+	measure 'Bottom Product' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_products[product_name]),
+			    TOPN(1, FILTER(ALL(dim_products), NOT ISBLANK([Total Sales])), [Total Sales], ASC)
+			)
+		displayFolder: 03 Products
+		lineageTag: cdb3405c-e053-4580-a6f0-171c23b06b2d
+
+	/// This product's/brand's/category's share of TOTAL company sales, regardless of grain shown in the visual. One generic measure reused at product, brand, or category level — the formula is identical at every grain (current context sales ÷ all-products sales), so separate 'Category Contribution %' and 'Brand Contribution %' measures would be redundant duplicates of this same logic.
+	measure 'Product Contribution %' = DIVIDE([Total Sales], CALCULATE([Total Sales], ALL(dim_products)))
+		formatString: 0.0%
+		displayFolder: 03 Products
+		lineageTag: 74a706cd-0d46-4d15-bac5-c9bac692dd25
+
+	/// Row count of dim_stores — full store network regardless of activity
+	measure 'Total Stores' = COUNTROWS(dim_stores)
+		formatString: #,##0
+		displayFolder: 04 Stores
+		lineageTag: 1b1121ec-68fb-4ff5-9ecf-c86ec35a500a
+
+	/// Distinct stores with at least one sale EVER (ignores date filter, respects other filters)
+	measure 'Active Stores' = CALCULATE(DISTINCTCOUNT(fact_sales_normalized[store_sk]), ALL(dim_dates))
+		formatString: #,##0
+		displayFolder: 04 Stores
+		lineageTag: b8b91e77-7b5b-4dcf-8284-df515bbd68f4
+
+	/// Distinct stores transacting within the CURRENT filter context
+	measure 'Stores With Sales' = DISTINCTCOUNT(fact_sales_normalized[store_sk])
+		formatString: #,##0
+		displayFolder: 04 Stores
+		lineageTag: e7889662-2fc9-4399-b1cc-a702594fa0e5
+
+	/// Dense rank of the current store by Total Sales, highest = 1, evaluated catalog-wide via ALL(dim_stores)
+	measure 'Store Rank' = RANKX(ALL(dim_stores), [Total Sales], , DESC, Dense)
+		formatString: #,##0
+		displayFolder: 04 Stores
+		lineageTag: cf73aa85-d66d-4695-8c76-6b58a64f01d5
+
+	/// Name of the single highest-selling store, disambiguated with location and ID since store_name alone is shared by ~10 branches on average (50 distinct names across 500 stores)
+	measure 'Top Store' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_stores[store_name]) & " — " & SELECTEDVALUE(dim_stores[store_location]) & " (" & SELECTEDVALUE(dim_stores[store_id]) & ")",
+			    TOPN(1, ALL(dim_stores), [Total Sales], DESC)
+			)
+		displayFolder: 04 Stores
+		lineageTag: a19adc9f-70db-4498-bc0c-fb8dc74e2075
+
+	/// Name of the lowest-selling store (excluding zero-sales stores), disambiguated with location and ID since store_name alone is shared by ~10 branches on average
+	measure 'Bottom Store' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_stores[store_name]) & " — " & SELECTEDVALUE(dim_stores[store_location]) & " (" & SELECTEDVALUE(dim_stores[store_id]) & ")",
+			    TOPN(1, FILTER(ALL(dim_stores), NOT ISBLANK([Total Sales])), [Total Sales], ASC)
+			)
+		displayFolder: 04 Stores
+		lineageTag: 77c4225c-de5e-40dc-a456-cc40bc82e52b
+
+	/// This store's share of TOTAL company sales, regardless of grain shown in the visual (store, store type, or location)
+	measure 'Store Contribution %' = DIVIDE([Total Sales], CALCULATE([Total Sales], ALL(dim_stores)))
+		formatString: 0.0%
+		displayFolder: 04 Stores
+		lineageTag: fc1382d8-988f-4769-9dd1-17c65e3d0d06
+
+	/// Row count of dim_salespersons — full staff roster regardless of activity
+	measure 'Total Salespersons' = COUNTROWS(dim_salespersons)
+		formatString: #,##0
+		displayFolder: 05 Salespersons
+		lineageTag: 8db2b78e-e8ca-40d6-97fc-17fed79b4b5f
+
+	/// Distinct salespersons with at least one sale EVER (ignores date filter, respects other filters)
+	measure 'Active Salespersons' = CALCULATE(DISTINCTCOUNT(fact_sales_normalized[salesperson_sk]), ALL(dim_dates))
+		formatString: #,##0
+		displayFolder: 05 Salespersons
+		lineageTag: 8d43bfc7-3916-48f9-8db8-7c0894966237
+
+	/// Dense rank of the current salesperson by Total Sales, highest = 1, evaluated staff-wide via ALL(dim_salespersons)
+	measure 'Salesperson Rank' = RANKX(ALL(dim_salespersons), [Total Sales], , DESC, Dense)
+		formatString: #,##0
+		displayFolder: 05 Salespersons
+		lineageTag: 0fc6e8b8-8bce-4205-b87f-287102b0a201
+
+	/// Name of the top-selling salesperson, with ID appended since salesperson_name has 23 collisions across 2,000 staff (1,977 distinct names)
+	measure 'Top Salesperson' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_salespersons[salesperson_name]) & " (" & SELECTEDVALUE(dim_salespersons[salesperson_id]) & ")",
+			    TOPN(1, ALL(dim_salespersons), [Total Sales], DESC)
+			)
+		displayFolder: 05 Salespersons
+		lineageTag: fd6f7935-e8d9-4822-a10c-5736e5c5e181
+
+	/// Name of the lowest-selling salesperson (excluding zero-sales staff), with ID appended for disambiguation
+	measure 'Bottom Salesperson' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_salespersons[salesperson_name]) & " (" & SELECTEDVALUE(dim_salespersons[salesperson_id]) & ")",
+			    TOPN(1, FILTER(ALL(dim_salespersons), NOT ISBLANK([Total Sales])), [Total Sales], ASC)
+			)
+		displayFolder: 05 Salespersons
+		lineageTag: 7bfb710d-4e80-4b27-bcfb-eb6ab7688331
+
+	/// This salesperson's/role's share of TOTAL company sales, regardless of grain shown in the visual
+	measure 'Salesperson Contribution %' = DIVIDE([Total Sales], CALCULATE([Total Sales], ALL(dim_salespersons)))
+		formatString: 0.0%
+		displayFolder: 05 Salespersons
+		lineageTag: 264640ba-16cc-4f8e-bd98-df06d0723552
+
+	/// Sales attributable to the stores each person MANAGES (not sold personally). Uses the inactive dim_stores→dim_salespersons relationship created in Phase 3 via USERELATIONSHIP, since that path can't be active alongside the existing salesperson-as-seller relationship without creating a cycle.
+	measure 'Sales by Store Manager' =
+			CALCULATE(
+			    [Total Sales],
+			    USERELATIONSHIP(dim_stores[store_manager_sk], dim_salespersons[salesperson_sk])
+			)
+		displayFolder: 05 Salespersons
+		lineageTag: da07497c-17ed-4621-97a3-d4661ecafe04
+
+	/// Total budget across campaigns in current filter context
+	measure 'Campaign Budget' = SUM(dim_campaigns[campaign_budget])
+		formatString: "AED" #,##0
+		displayFolder: 06 Campaigns
+		lineageTag: a7c203e4-1811-469a-8985-0b3939aa777f
+
+	/// Sales-to-budget ratio, e.g. 3.0 means AED3 in sales per AED1 of budget. EXPLICITLY NOT TRUE ROI — campaign_budget is not confirmed as actual attributable marketing spend, and every sale in this dataset is already attributed to some campaign (no non-campaign baseline exists to isolate incremental lift). Do not relabel this as ROI without confirming budget = real spend with the business.
+	measure 'Sales to Budget Ratio' = DIVIDE([Total Sales], [Campaign Budget])
+		formatString: 0.00"x"
+		displayFolder: 06 Campaigns
+		lineageTag: a51b9c9e-6047-402a-99d6-93ee5aecec98
+
+	/// Dense rank of the current campaign by Total Sales, highest = 1, evaluated campaign-wide via ALL(dim_campaigns)
+	measure 'Campaign Rank' = RANKX(ALL(dim_campaigns), [Total Sales], , DESC, Dense)
+		formatString: #,##0
+		displayFolder: 06 Campaigns
+		lineageTag: fe037c48-32a7-4991-9720-13a2c9414a1f
+
+	/// Name of the highest-selling campaign in the current context
+	measure 'Top Campaign' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_campaigns[campaign_name]),
+			    TOPN(1, ALL(dim_campaigns), [Total Sales], DESC)
+			)
+		displayFolder: 06 Campaigns
+		lineageTag: f58638ec-f87a-4479-9397-66244f71ec42
+
+	/// Name of the lowest-selling campaign (excluding zero-sales campaigns, none currently exist)
+	measure 'Bottom Campaign' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_campaigns[campaign_name]),
+			    TOPN(1, FILTER(ALL(dim_campaigns), NOT ISBLANK([Total Sales])), [Total Sales], ASC)
+			)
+		displayFolder: 06 Campaigns
+		lineageTag: be866b34-80ad-4e4b-ab29-7492bc4e0578
+
+	/// This campaign's share of TOTAL company sales
+	measure 'Campaign Contribution %' = DIVIDE([Total Sales], CALCULATE([Total Sales], ALL(dim_campaigns)))
+		formatString: 0.0%
+		displayFolder: 06 Campaigns
+		lineageTag: 895bedc4-3c9c-4cfc-8454-ffe11c298ba9
+
+	/// Month-to-date sales as of the latest date in current filter context
+	measure 'Sales MTD' = CALCULATE([Total Sales], DATESMTD(dim_dates[full_date]))
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: f666bb61-9254-45cb-8c62-19b63a2b773a
+
+	/// Quarter-to-date sales as of the latest date in current filter context
+	measure 'Sales QTD' = CALCULATE([Total Sales], DATESQTD(dim_dates[full_date]))
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: e957cc90-f969-4f25-b3a1-0303b5c6c728
+
+	/// Year-to-date sales as of the latest date in current filter context
+	measure 'Sales YTD' = CALCULATE([Total Sales], DATESYTD(dim_dates[full_date]))
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: ed9632cd-f16e-4fed-8699-79a1a2e93624
+
+	/// Sales for the same period, shifted back one month
+	measure 'Previous Month Sales' = CALCULATE([Total Sales], DATEADD(dim_dates[full_date], -1, MONTH))
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: 11943ddc-d50d-4bd6-b69c-c0d3554b91bb
+
+	/// Sales for the same period, shifted back one quarter
+	measure 'Previous Quarter Sales' = CALCULATE([Total Sales], DATEADD(dim_dates[full_date], -1, QUARTER))
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: 55807432-3694-428b-8910-438820548ded
+
+	/// Sales for the same period, shifted back one year. NOTE: will return BLANK on all current data — the dataset covers only 2024, so no prior-year data exists to shift into. This is expected, not a bug; becomes functional once a second year of data is loaded.
+	measure 'Previous Year Sales' = CALCULATE([Total Sales], DATEADD(dim_dates[full_date], -1, YEAR))
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: 91edd6a9-99e9-4039-9ae9-d941f3c920cc
+
+	/// Month-over-month growth rate
+	measure 'MoM Growth %' = DIVIDE([Total Sales] - [Previous Month Sales], [Previous Month Sales])
+		formatString: 0.0%
+		displayFolder: 07 Time Intelligence
+		lineageTag: dd192052-9aa3-4370-b7c0-2050355b0ae0
+
+	/// Quarter-over-quarter growth rate
+	measure 'QoQ Growth %' = DIVIDE([Total Sales] - [Previous Quarter Sales], [Previous Quarter Sales])
+		formatString: 0.0%
+		displayFolder: 07 Time Intelligence
+		lineageTag: a783ed8d-c203-449a-8ba1-f4624900de2b
+
+	/// Year-over-year growth rate. NOTE: will be BLANK on all current data — see Previous Year Sales.
+	measure 'YoY Growth %' = DIVIDE([Total Sales] - [Previous Year Sales], [Previous Year Sales])
+		formatString: 0.0%
+		displayFolder: 07 Time Intelligence
+		lineageTag: 53268572-0e9f-4282-93a3-e6153e4e4333
+
+	/// Year-to-date growth rate vs. the same YTD period last year. NOTE: will be BLANK on all current data — no prior year exists yet.
+	measure 'YTD Growth %' =
+			VAR CurrentYTD = [Sales YTD]
+			VAR PriorYTD = CALCULATE([Sales YTD], DATEADD(dim_dates[full_date], -1, YEAR))
+			RETURN DIVIDE(CurrentYTD - PriorYTD, PriorYTD)
+		formatString: 0.0%
+		displayFolder: 07 Time Intelligence
+		lineageTag: 61caf808-bfd0-426a-904e-47d9df40f2ca
+
+	/// Cumulative sales from the start of available data through the latest date in current context
+	measure 'Running Total Sales' =
+			CALCULATE(
+			    [Total Sales],
+			    FILTER(ALL(dim_dates), dim_dates[full_date] <= MAX(dim_dates[full_date]))
+			)
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: beaf7425-1820-4cec-a3fd-f56db2f6b341
+
+	/// Trailing 7-day sales ending on the latest date in current context
+	measure 'Rolling 7 Day Sales' = CALCULATE([Total Sales], DATESINPERIOD(dim_dates[full_date], MAX(dim_dates[full_date]), -7, DAY))
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: be026562-0a9d-47c6-a3a9-1fc1782e56d5
+
+	/// Trailing 30-day sales ending on the latest date in current context
+	measure 'Rolling 30 Day Sales' = CALCULATE([Total Sales], DATESINPERIOD(dim_dates[full_date], MAX(dim_dates[full_date]), -30, DAY))
+		formatString: "AED" #,##0
+		displayFolder: 07 Time Intelligence
+		lineageTag: 7e1d7a9f-4d95-4a62-be82-00130eb0addd
+
+	/// Share of total sales from the top 10 products by sales (measures revenue concentration in the product catalog)
+	measure 'Top 10 Product Contribution %' =
+			VAR Top10 = TOPN(10, ALL(dim_products), [Total Sales], DESC)
+			VAR Top10Sales = CALCULATE([Total Sales], Top10)
+			RETURN DIVIDE(Top10Sales, CALCULATE([Total Sales], ALL(dim_products)))
+		formatString: 0.0%
+		displayFolder: 08 Advanced Analytics
+		lineageTag: 382ea934-a626-4f65-bbde-31646382cb4e
+
+	/// Share of total sales from the top 10 stores by sales
+	measure 'Top 10 Store Contribution %' =
+			VAR Top10 = TOPN(10, ALL(dim_stores), [Total Sales], DESC)
+			VAR Top10Sales = CALCULATE([Total Sales], Top10)
+			RETURN DIVIDE(Top10Sales, CALCULATE([Total Sales], ALL(dim_stores)))
+		formatString: 0.0%
+		displayFolder: 08 Advanced Analytics
+		lineageTag: aae9743d-05cd-426e-9a64-9eba511492bd
+
+	/// Share of total sales from the top 10 customers by spend — the key business-risk metric for revenue concentration among individual customers
+	measure 'Top 10 Customer Contribution %' =
+			VAR Top10 = TOPN(10, ALL(dim_customers), [Total Sales], DESC)
+			VAR Top10Sales = CALCULATE([Total Sales], Top10)
+			RETURN DIVIDE(Top10Sales, CALCULATE([Total Sales], ALL(dim_customers)))
+		formatString: 0.0%
+		displayFolder: 08 Advanced Analytics
+		lineageTag: 4156ed2d-6267-48d6-9c6c-0314615aff34
+
+	/// Cumulative % of total sales contributed by products up to and including the current product's rank. Used in a table/chart sorted by Product Rank ascending to draw the classic Pareto (80/20) curve.
+	measure 'Pareto Cumulative %' =
+			VAR CurrentRank = [Product Rank]
+			VAR CumulativeSales = CALCULATE([Total Sales], FILTER(ALL(dim_products), [Product Rank] <= CurrentRank))
+			RETURN DIVIDE(CumulativeSales, CALCULATE([Total Sales], ALL(dim_products)))
+		formatString: 0.0%
+		displayFolder: 08 Advanced Analytics
+		lineageTag: 96db6832-9b1c-49b4-9dd6-d48a5139b337
+
+	/// Total sales divided by the number of calendar days in the current filter context (includes zero-sales days if any exist, giving a true daily average)
+	measure 'Average Daily Sales' = DIVIDE([Total Sales], COUNTROWS(VALUES(dim_dates[full_date])))
+		formatString: "AED" #,##0
+		displayFolder: 08 Advanced Analytics
+		lineageTag: 4495c534-8bd3-499d-b8a6-090cab813f85
+
+	/// Population standard deviation of day-level sales within current context — higher values indicate more erratic day-to-day sales
+	measure 'Sales Volatility' =
+			VAR DailySales = ADDCOLUMNS(VALUES(dim_dates[full_date]), "DaySales", CALCULATE([Total Sales]))
+			RETURN STDEVX.P(DailySales, [DaySales])
+		formatString: "AED" #,##0
+		displayFolder: 08 Advanced Analytics
+		lineageTag: d573b4d4-5735-4834-9340-2b204676795c
+
+	/// Calendar date with the single highest sales total in current context
+	measure 'Best Sales Day' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_dates[full_date]),
+			    TOPN(1, ALL(dim_dates), [Total Sales], DESC)
+			)
+		formatString: Short Date
+		displayFolder: 08 Advanced Analytics
+		lineageTag: 191a927b-cf98-4fdf-8c77-7db2f8deddbb
+
+	/// Calendar date with the lowest non-zero sales total in current context
+	measure 'Worst Sales Day' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_dates[full_date]),
+			    TOPN(1, FILTER(ALL(dim_dates), NOT ISBLANK([Total Sales])), [Total Sales], ASC)
+			)
+		formatString: Short Date
+		displayFolder: 08 Advanced Analytics
+		lineageTag: fc316cf5-33e5-4f38-8bd8-c897d83cae0b
+
+	/// Calendar month (Year-Month label) with the highest sales total
+	measure 'Best Month' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_dates[year_month]),
+			    TOPN(1, ALL(dim_dates[year_month]), [Total Sales], DESC)
+			)
+		displayFolder: 08 Advanced Analytics
+		lineageTag: 299657e6-32f1-4ad3-9288-113dafdcc5dd
+
+	/// Calendar month (Year-Month label) with the lowest non-zero sales total
+	measure 'Worst Month' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_dates[year_month]),
+			    TOPN(1, FILTER(ALL(dim_dates[year_month]), NOT ISBLANK([Total Sales])), [Total Sales], ASC)
+			)
+		displayFolder: 08 Advanced Analytics
+		lineageTag: 73242482-b88e-46ca-a74a-bd713f98d9bf
+
+	/// Dense rank of the current customer by Total Sales, highest = 1
+	measure 'Customer Rank' = RANKX(ALL(dim_customers), [Total Sales], , DESC, Dense)
+		formatString: #,##0
+		displayFolder: 02 Customers
+		lineageTag: 7f865e6f-721a-454f-885a-f2be163376ac
+
+	/// Top-spending customer's full name with customer_id appended for guaranteed uniqueness
+	measure 'Top Customer' =
+			CALCULATE(
+			    SELECTEDVALUE(dim_customers[first_name]) & " " & SELECTEDVALUE(dim_customers[last_name]) & " (" & SELECTEDVALUE(dim_customers[customer_id]) & ")",
+			    TOPN(1, ALL(dim_customers), [Total Sales], DESC)
+			)
+		displayFolder: 02 Customers
+		lineageTag: 7a159807-c2b7-49ab-b2af-5c8624a5c20c
+
+	/// Average sales per salesperson in current filter context
+	measure 'Average Sales Per Salesperson' = DIVIDE([Total Sales], DISTINCTCOUNT(fact_sales_normalized[salesperson_sk]))
+		formatString: "AED" #,##0
+		displayFolder: 05 Salespersons
+		lineageTag: 4f8e8426-1607-4ab7-8b69-d43f3aff40d4
+
+	/// Total number of campaigns in the catalog
+	measure 'Total Campaigns' = COUNTROWS(dim_campaigns)
+		formatString: #,##0
+		displayFolder: 06 Campaigns
+		lineageTag: 6e98f9d3-4edb-47e5-a030-c1e34230fa91
+
+	/// Fact rows whose customer_sk has no match in dim_customers. Should always be 0; a live tripwire for referential integrity.
+	measure 'Orphan Customer Keys' = COUNTROWS(EXCEPT(VALUES(fact_sales_normalized[customer_sk]), VALUES(dim_customers[customer_sk])))
+		formatString: #,##0
+		displayFolder: 09 Data Quality
+		lineageTag: a5b2af7f-7a77-409a-a620-367665b51b79
+
+	/// Fact rows whose product_sk has no match in dim_products. Should always be 0.
+	measure 'Orphan Product Keys' = COUNTROWS(EXCEPT(VALUES(fact_sales_normalized[product_sk]), VALUES(dim_products[product_sk])))
+		formatString: #,##0
+		displayFolder: 09 Data Quality
+		lineageTag: febac921-91e5-4f8b-b623-79a77f08c21c
+
+	/// Fact rows whose store_sk has no match in dim_stores. Should always be 0.
+	measure 'Orphan Store Keys' = COUNTROWS(EXCEPT(VALUES(fact_sales_normalized[store_sk]), VALUES(dim_stores[store_sk])))
+		formatString: #,##0
+		displayFolder: 09 Data Quality
+		lineageTag: f8e19874-3fec-42ef-9ad7-43d90f084c93
+
+	/// Fact rows whose salesperson_sk has no match in dim_salespersons. Should always be 0.
+	measure 'Orphan Salesperson Keys' = COUNTROWS(EXCEPT(VALUES(fact_sales_normalized[salesperson_sk]), VALUES(dim_salespersons[salesperson_sk])))
+		formatString: #,##0
+		displayFolder: 09 Data Quality
+		lineageTag: 7e7f2576-0fff-4f46-b7b9-743d9df42168
+
+	/// Fact rows whose campaign_sk has no match in dim_campaigns. Should always be 0.
+	measure 'Orphan Campaign Keys' = COUNTROWS(EXCEPT(VALUES(fact_sales_normalized[campaign_sk]), VALUES(dim_campaigns[campaign_sk])))
+		formatString: #,##0
+		displayFolder: 09 Data Quality
+		lineageTag: bbaec522-3ccb-42ab-a818-12feccb5b39a
+
+	/// Difference between Total Transactions and Distinct Transactions. Should always be 0; any positive value indicates duplicate sales_id values have entered the model.
+	measure 'Duplicate Transaction Count' = [Total Transactions] - [Distinct Transactions]
+		formatString: #,##0
+		displayFolder: 09 Data Quality
+		lineageTag: 7677ac32-8f16-48b6-87d2-c938af9ac2e1
+
+	column Column1
+		dataType: string
+		isHidden
+		lineageTag: 699e4b9d-d3e5-4d1b-927c-672dd2e0fd9e
+		summarizeBy: none
+		sourceColumn: Column1
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Column1 = _t]),
+				    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Column1", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

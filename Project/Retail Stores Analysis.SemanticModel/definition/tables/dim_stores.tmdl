@@ -1,0 +1,67 @@
+table dim_stores
+	lineageTag: e70a0f37-6c2a-4f5e-9628-3e5597d99dd7
+
+	column store_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: f2cb0365-56c1-45f1-8465-0db62a8e8cb2
+		summarizeBy: none
+		sourceColumn: store_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column store_id
+		dataType: string
+		lineageTag: f49a8f60-efc4-47d2-ba3c-bbd02b32517c
+		summarizeBy: none
+		sourceColumn: store_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column store_name
+		dataType: string
+		lineageTag: 0521f0d0-c595-4011-a295-f6c08019a91c
+		summarizeBy: none
+		sourceColumn: store_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column store_type
+		dataType: string
+		lineageTag: 0ba5dc42-a0b8-4da1-b514-e607e254f87f
+		summarizeBy: none
+		sourceColumn: store_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column store_location
+		dataType: string
+		lineageTag: 083bff7c-c2d8-4ca5-ac7b-f228a3e051b8
+		summarizeBy: none
+		sourceColumn: store_location
+
+		annotation SummarizationSetBy = Automatic
+
+	column store_manager_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: 2fd3ab0e-c2fe-414b-91a6-a654ddcf534d
+		summarizeBy: none
+		sourceColumn: store_manager_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_stores = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Hp\OneDrive\Documents\Power BI Projects\Retail Stores Analysis\data\dim_stores.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"store_sk", Int64.Type}, {"store_id", type text}, {"store_name", type text}, {"store_type", type text}, {"store_location", type text}, {"store_manager_sk", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

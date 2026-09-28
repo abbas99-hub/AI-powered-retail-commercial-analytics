@@ -1,0 +1,77 @@
+table dim_campaigns
+	lineageTag: 2498fd80-c8d8-42e4-92e3-45437e512543
+
+	column campaign_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: d6d90444-2663-41c0-ac8b-7e39ce77ef46
+		summarizeBy: none
+		sourceColumn: campaign_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column campaign_id
+		dataType: string
+		lineageTag: 39ac8ae5-720e-4795-8833-b72f030a9cd3
+		summarizeBy: none
+		sourceColumn: campaign_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column campaign_name
+		dataType: string
+		lineageTag: c1c6cc19-180d-4d16-b41c-fe5c3ea436e3
+		summarizeBy: none
+		sourceColumn: campaign_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column start_date_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: e6e02679-af46-498c-ae44-13f8df7b7c0b
+		summarizeBy: none
+		sourceColumn: start_date_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column end_date_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: d78630bd-e023-43c9-9f35-a40d5a3d434b
+		summarizeBy: none
+		sourceColumn: end_date_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column campaign_budget
+		dataType: int64
+		formatString: 0
+		lineageTag: 820dbfe7-51b7-4d5c-91fc-3a191b7c4d6f
+		summarizeBy: none
+		sourceColumn: campaign_budget
+
+		annotation SummarizationSetBy = Automatic
+
+	column campaign_duration_days =
+			VAR StartDate = LOOKUPVALUE(dim_dates[full_date], dim_dates[date_sk], dim_campaigns[start_date_sk])
+			VAR EndDate = LOOKUPVALUE(dim_dates[full_date], dim_dates[date_sk], dim_campaigns[end_date_sk])
+			RETURN DATEDIFF(StartDate, EndDate, DAY) + 1
+		dataType: int64
+		displayFolder: Campaign Attributes
+		lineageTag: 61094683-19e2-4b6e-987a-5c404ac9cd7d
+
+	partition dim_campaigns = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Hp\OneDrive\Documents\Power BI Projects\Retail Stores Analysis\data\dim_campaigns.csv"),[Delimiter=",", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"campaign_sk", Int64.Type}, {"campaign_id", type text}, {"campaign_name", type text}, {"start_date_sk", Int64.Type}, {"end_date_sk", Int64.Type}, {"campaign_budget", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

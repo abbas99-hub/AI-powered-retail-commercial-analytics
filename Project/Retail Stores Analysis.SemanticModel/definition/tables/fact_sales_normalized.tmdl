@@ -1,0 +1,103 @@
+table fact_sales_normalized
+	lineageTag: 45f127d3-df26-40de-ba42-a511b2fd04b2
+
+	column sales_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: 4cb31992-de3a-4dbd-83eb-cfe3082166d3
+		summarizeBy: sum
+		sourceColumn: sales_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_id
+		dataType: string
+		lineageTag: 104b7d72-dada-4d7a-aadd-3f93f4df83ab
+		summarizeBy: none
+		sourceColumn: sales_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: 86ad2b07-820c-433a-8213-718f53e50381
+		summarizeBy: none
+		sourceColumn: customer_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: fcb0b076-5824-4dd4-b4ce-0dc264ec7c85
+		summarizeBy: none
+		sourceColumn: product_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column store_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: 7bca6dc3-d261-4510-af67-988325acc41e
+		summarizeBy: none
+		sourceColumn: store_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column salesperson_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: 44e1966a-4d41-4a94-8c5c-00bea48547c6
+		summarizeBy: none
+		sourceColumn: salesperson_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column campaign_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: 3e4d8165-6932-411b-b4b5-4163b6d30132
+		summarizeBy: none
+		sourceColumn: campaign_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_date
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: f017c286-9b13-4c1b-8e2f-db0d0de7e375
+		summarizeBy: none
+		sourceColumn: sales_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column total_amount
+		dataType: double
+		lineageTag: e5ce0e0a-0c0f-4097-9f62-6e423b636d38
+		summarizeBy: sum
+		sourceColumn: total_amount
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column sales_date_only = DATEVALUE(fact_sales_normalized[sales_date])
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: a1acd1ec-2d0a-4eb0-8c3d-71040f055d1e
+
+	partition fact_sales_normalized = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Hp\OneDrive\Documents\Power BI Projects\Retail Stores Analysis\data\fact_sales_normalized.csv"),[Delimiter=",", Columns=9, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"sales_sk", Int64.Type}, {"sales_id", type text}, {"customer_sk", Int64.Type}, {"product_sk", Int64.Type}, {"store_sk", Int64.Type}, {"salesperson_sk", Int64.Type}, {"campaign_sk", Int64.Type}, {"sales_date", type datetime}, {"total_amount", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

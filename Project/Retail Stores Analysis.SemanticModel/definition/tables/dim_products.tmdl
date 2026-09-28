@@ -1,0 +1,66 @@
+table dim_products
+	lineageTag: a2093306-6002-4b09-9e2b-de28e3d1d857
+
+	column product_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: 332d6b89-caac-48ec-af4d-191b4c7f5c3b
+		summarizeBy: none
+		sourceColumn: product_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_id
+		dataType: string
+		lineageTag: d424396c-502e-4289-8118-5b9a9cfc8bf3
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_name
+		dataType: string
+		lineageTag: bd0f6714-fc84-4cc4-89e1-e8609ec18409
+		summarizeBy: none
+		sourceColumn: product_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column category
+		dataType: string
+		lineageTag: 7319e1af-48cf-49ee-b42f-bcbfaf1de3ff
+		summarizeBy: none
+		sourceColumn: category
+
+		annotation SummarizationSetBy = Automatic
+
+	column brand
+		dataType: string
+		lineageTag: a7c9fd86-ad3e-4da3-a356-666f4cb03517
+		summarizeBy: none
+		sourceColumn: brand
+
+		annotation SummarizationSetBy = Automatic
+
+	column origin_location
+		dataType: string
+		lineageTag: b7d75cff-c921-4f6f-9222-52c0029a5541
+		summarizeBy: none
+		sourceColumn: origin_location
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_products = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Hp\OneDrive\Documents\Power BI Projects\Retail Stores Analysis\data\dim_products.csv"),[Delimiter=",", Columns=6, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"product_sk", Int64.Type}, {"product_id", type text}, {"product_name", type text}, {"category", type text}, {"brand", type text}, {"origin_location", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

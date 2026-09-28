@@ -1,0 +1,123 @@
+table dim_dates
+	lineageTag: 99a244e5-8dee-475c-99d8-dcf97b43fb40
+
+	column full_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 47fbe265-65ba-4b81-95e4-09bac64d66dd
+		summarizeBy: none
+		sourceColumn: full_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column date_sk
+		dataType: int64
+		formatString: 0
+		lineageTag: efa3e074-ed96-4484-a634-d8f7487d87bd
+		summarizeBy: sum
+		sourceColumn: date_sk
+
+		annotation SummarizationSetBy = Automatic
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: ca9ed8df-8c73-47c6-85df-82737d2d9154
+		summarizeBy: sum
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column month
+		dataType: int64
+		formatString: 0
+		lineageTag: af9eb917-03c2-4d80-b14c-9ec1256a71aa
+		summarizeBy: sum
+		sourceColumn: month
+
+		annotation SummarizationSetBy = Automatic
+
+	column day
+		dataType: int64
+		formatString: 0
+		lineageTag: c24bface-7e85-4b48-b94e-4ef1dc6386ba
+		summarizeBy: sum
+		sourceColumn: day
+
+		annotation SummarizationSetBy = Automatic
+
+	column weekday
+		dataType: int64
+		formatString: 0
+		lineageTag: 9dc66a00-d70c-43c3-939e-67ec94c4b6f3
+		summarizeBy: sum
+		sourceColumn: weekday
+
+		annotation SummarizationSetBy = Automatic
+
+	column quarter
+		dataType: int64
+		formatString: 0
+		lineageTag: 2e7381f5-cb90-40a2-9646-fe3a5ad04a9f
+		summarizeBy: sum
+		sourceColumn: quarter
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_name = SWITCH(dim_dates[month], 1,"January",2,"February",3,"March",4,"April",5,"May",6,"June",7,"July",8,"August",9,"September",10,"October",11,"November",12,"December")
+		dataType: string
+		displayFolder: Calendar Attributes
+		lineageTag: c4018651-5429-4687-b6ac-638efc369365
+		sortByColumn: month
+
+	column month_short_name = SWITCH(dim_dates[month], 1,"Jan",2,"Feb",3,"Mar",4,"Apr",5,"May",6,"Jun",7,"Jul",8,"Aug",9,"Sep",10,"Oct",11,"Nov",12,"Dec")
+		dataType: string
+		displayFolder: Calendar Attributes
+		lineageTag: e9a5cdb6-159e-4375-880f-7a2e24d35d99
+		sortByColumn: month
+
+	column weekday_name = SWITCH(dim_dates[weekday], 1,"Monday",2,"Tuesday",3,"Wednesday",4,"Thursday",5,"Friday",6,"Saturday",7,"Sunday")
+		dataType: string
+		displayFolder: Calendar Attributes
+		lineageTag: f6634070-97a9-480d-8b95-55c9eef5e434
+		sortByColumn: weekday
+
+	column is_weekend = dim_dates[weekday] >= 6
+		dataType: boolean
+		formatString: """Weekend"";""Weekend"";""Weekday"""
+		displayFolder: Calendar Attributes
+		lineageTag: 5803fe6f-4720-46b5-8085-939946ade301
+
+	column quarter_name = "Q" & dim_dates[quarter]
+		dataType: string
+		displayFolder: Calendar Attributes
+		lineageTag: b7fcdfd6-e4ec-4d84-91c2-7fe0da3110b1
+
+	column year_month = dim_dates[month_short_name] & " " & dim_dates[year]
+		dataType: string
+		displayFolder: Calendar Attributes
+		lineageTag: 0cb6b590-b9af-43cd-b0a5-fe5e21b75f77
+		sortByColumn: year_month_sort
+
+	column year_month_sort = (dim_dates[year] * 100) + dim_dates[month]
+		dataType: int64
+		isHidden
+		displayFolder: Calendar Attributes
+		lineageTag: 36b089de-d73c-4cbb-b843-bd432de8c26d
+
+	partition dim_dates = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Hp\OneDrive\Documents\Power BI Projects\Retail Stores Analysis\data\dim_dates.csv"),[Delimiter=",", Columns=7, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"full_date", type date}, {"date_sk", Int64.Type}, {"year", Int64.Type}, {"month", Int64.Type}, {"day", Int64.Type}, {"weekday", Int64.Type}, {"quarter", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

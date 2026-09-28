@@ -1,0 +1,25 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["dim_campaigns","dim_customers","dim_dates","dim_products","dim_salespersons","dim_stores","fact_sales_normalized","DataFolderPath","_Measures"]
+
+annotation PBI_ProTooling = ["MCP-PBIModeling","DevMode"]
+
+ref table dim_campaigns
+ref table dim_customers
+ref table dim_dates
+ref table dim_products
+ref table dim_salespersons
+ref table dim_stores
+ref table fact_sales_normalized
+ref table _Measures
+
+ref cultureInfo en-US
+
